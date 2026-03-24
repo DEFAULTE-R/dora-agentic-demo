@@ -1,112 +1,239 @@
-# Agentic Dora — Real-Time Robot Control with Dataflows
+# 🤖 Agentic Dora Demo (GSoC 2026 Prototype)
 
-A working proof-of-concept demonstrating **agent-driven robot control using Dora dataflows**, where natural language commands are translated into control signals and executed in a physics simulation.
+A modular, real-time robotics pipeline built using **Dora-RS**, demonstrating an **agentic architecture** with structured messaging, safety validation, and simulation.
 
 ---
 
-##  Overview
+## 🚀 Overview
 
-This project shows how an **agent can be embedded inside a Dora dataflow** to control a robot in real time.
-
-It implements a modular pipeline:
+This project implements a complete **agent-driven robotics control system** using Dora dataflows:
 
 ```
-Input Node → Agent Bridge → Dora Runtime → Simulation (PyBullet)
+Input Node → Agent Bridge → Safety Node → Simulation Node
+```
+
+### Key Features
+
+* 🧠 Natural language → control signal conversion
+* 🛡️ Dedicated safety validation layer
+* 🔄 Structured message passing (JSON schema)
+* ⚡ Real-time execution with Dora runtime
+* 🎮 Live robot simulation using PyBullet
+
+---
+
+## 🧱 Architecture
+
+### 🔹 Input Node
+
+* Streams commands (e.g., `"move forward"`, `"turn left"`)
+* Designed for **non-interactive Dora execution** (no `input()`)
+
+---
+
+### 🔹 Agent Bridge
+
+* Converts natural language → structured control signals
+* Current implementation: rule-based agent
+* Output format:
+
+```json
+{
+  "velocity": {
+    "linear": 0.5,
+    "angular": 0.0
+  },
+  "meta": {
+    "source": "agent",
+    "timestamp": 0,
+    "command_id": "move forward"
+  }
+}
 ```
 
 ---
 
-##  Key Features
+### 🔹 Safety Node
 
-* ⚡ Real-time command execution using Dora runtime
-* 🧩 Modular node-based architecture (easy to extend or swap components)
-* 🤖 Natural language → velocity command pipeline
-* 🖥️ PyBullet simulation with optional GUI
-* 🔌 Agent abstraction (currently rule-based, replaceable with LLM)
+* Independent validation layer (aligned with Dora philosophy)
+* Responsibilities:
 
----
-
-##  Architecture
-
-### 1. Input Node
-
-Streams commands into the Dora dataflow.
-
-### 2. Agent Bridge
-
-Converts natural language commands into structured velocity outputs:
-
-* linear velocity
-* angular velocity
-
-### 3. Simulation Node
-
-Executes commands in a PyBullet environment and updates robot state.
+  * Clamp velocity values
+  * Detect unsafe commands
+  * Ensure safe execution before simulation
 
 ---
 
-## ▶️ How to Run
+### 🔹 Simulation Node
+
+* Built using **PyBullet**
+* Applies velocity in real time:
+
+```python
+p.resetBaseVelocity(
+    robot,
+    linearVelocity=[linear, 0, 0],
+    angularVelocity=[0, 0, angular]
+)
+```
+
+---
+
+## 🔁 Data Flow
+
+```
+Input → Agent → Safety → Simulation
+         ↓
+   Structured JSON Messages
+```
+
+---
+
+## 🧩 Structured Messaging
+
+This project introduces a **schema-based communication system**:
+
+### Python (runtime)
+
+* JSON messages passed between nodes
+
+### Rust (future integration)
+
+* Typed schema defined in:
+
+```
+src/schemas/control.rs
+```
+
+Includes:
+
+* `VelocityCommand`
+* `CommandMeta`
+* `ControlMessage`
+
+👉 Enables:
+
+* Traceability (command_id)
+* Observability (source, timestamp)
+* Extensibility (future fields)
+
+---
+
+## ⚙️ Setup
+
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/DEFAULTE-R/dora-agentic-demo.git
 cd dora-agentic-demo
+```
 
+---
+
+### 2. Create virtual environment
+
+```bash
 python3 -m venv dora-env
 source dora-env/bin/activate
+```
 
+---
+
+### 3. Install dependencies
+
+```bash
 pip install dora-rs pybullet smolagents
+```
 
+---
+
+## ▶️ Run the Pipeline
+
+```bash
 dora run configs/dataflow.yml
 ```
 
 ---
 
-## 🎮 Example Commands
+## ⚠️ Important Notes
 
-The system supports:
+### ❌ No `input()` in Dora Nodes
 
-* `move forward`
-* `move left`
-* `move right`
-* `stop`
+Dora nodes are non-interactive.
+Using `input()` will cause:
 
-Commands are processed in real time and applied to the robot.
+```
+EOFError: EOF when reading a line
+```
 
----
-
-## 📌 Current Status
-
-✅ End-to-end Dora dataflow working
-✅ Real-time agent → control pipeline
-✅ PyBullet simulation with live control
+✅ Use streaming or predefined inputs instead.
 
 ---
 
-## 🔧 Next Steps
+### ⚠️ Simulation Exit Behavior
 
-* Add structured command schema + validation
-* Introduce safety mechanisms (timeouts, constraints)
-* Replace rule-based agent with LLM (smolagents)
-* Support multi-step commands (e.g., "move in a square")
+Closing the PyBullet window will:
 
----
+* Terminate the simulation node
+* Cause "broken pipe" logs in other nodes
 
-##  Goal
-
-This project explores how **Dora can serve as a runtime for agent-driven robotics**, emphasizing:
-
-* modularity
-* composability
-* real-time execution
+This is expected in distributed systems.
 
 ---
 
-## Context
+## 📈 Current Status
 
-Built as a hands-on exploration for **GSoC 2026 — Agentic Dora project idea**.
+### ✅ Completed
+
+* Modular Dora pipeline
+* Agent → Safety → Simulation flow
+* Structured JSON messaging
+* Real-time simulation control
+* Safety abstraction layer
+
+### 🚧 In Progress
+
+* Metadata preservation across all nodes
+* LLM-based agent integration
+* Multi-step command execution
+* Fault tolerance & node recovery
 
 ---
 
-## ⭐ If you find this interesting
+## 🎯 GSoC 2026 Direction
 
-Feel free to star the repo or contribute!
+This project is evolving toward:
+
+* 🤖 **Agentic robotics system**
+* 🧠 LLM-powered decision making
+* 🛡️ Robust safety guarantees
+* 📡 Typed, schema-driven communication
+* 🔁 Multi-node coordination
+
+---
+
+## 🧠 Key Learnings
+
+* Dora requires **event-driven, non-blocking nodes**
+* Separation of concerns is critical (Agent vs Safety)
+* Structured messaging enables scalable systems
+* Real-time systems require fault awareness
+
+---
+
+## 📌 Repository
+
+👉 https://github.com/DEFAULTE-R/dora-agentic-demo
+
+---
+
+## 🧑‍💻 Author
+
+**Hari L**
+GSoC 2026 Aspirant – Agentic Systems & Robotics
+
+---
+
+## ⭐ If you find this useful
+
+Star the repo and follow the progress 🚀
