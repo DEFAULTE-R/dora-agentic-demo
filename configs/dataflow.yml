@@ -9,11 +9,18 @@ nodes:
     inputs:
       command: input/user_command
     outputs:
+      - cmd_out
+
+  - id: safety
+    path: ../safety_node.py
+    inputs:
+      cmd_in: agent_bridge/cmd_out
+    outputs:
       - cmd_vel
 
   - id: simulation
     path: ../simulation/robot.py
     inputs:
-      cmd_vel: agent_bridge/cmd_vel
+      cmd_vel: safety/cmd_vel
     outputs:
       - robot_pose
