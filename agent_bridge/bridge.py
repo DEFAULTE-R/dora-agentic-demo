@@ -24,7 +24,7 @@ print("Agent bridge node started")
 
 for event in node:
     if event["type"] == "INPUT" and event["id"] == "command":
-        command = "move forward"
+        command = event["value"].to_pylist()[0]
         print(f"[AGENT] Received command: {command}")
         
         result = agent.run(command)

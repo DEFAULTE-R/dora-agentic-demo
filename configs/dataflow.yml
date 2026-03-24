@@ -1,14 +1,19 @@
 nodes:
+  - id: input
+    path: ../input_node.py
+    outputs:
+      - user_command
+
+  - id: agent_bridge
+    path: ../agent_bridge/bridge.py
+    inputs:
+      command: input/user_command
+    outputs:
+      - cmd_vel
+
   - id: simulation
     path: ../simulation/robot.py
     inputs:
       cmd_vel: agent_bridge/cmd_vel
     outputs:
       - robot_pose
-
-  - id: agent_bridge
-    path: ../agent_bridge/bridge.py
-    inputs:
-      command: dora/timer/secs/2
-    outputs:
-      - cmd_vel

@@ -7,7 +7,7 @@ from dora import Node
 node = Node()
 
 # Connect to PyBullet in headless mode
-p.connect(p.DIRECT)
+p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.8)
 p.loadURDF("plane.urdf")
@@ -26,6 +26,13 @@ for event in node:
             linear = float(values[0])
             angular = float(values[1])
             print(f"[SIM] cmd_vel received: linear={linear}, angular={angular}")
+        # Apply movement to robot
+        p.resetBaseVelocity(
+            robot,
+            linearVelocity=[linear, 0, 0],
+            angularVelocity=[0, 0, angular]
+        )
+
 
         # Publish pose
         pos, orn = p.getBasePositionAndOrientation(robot)
