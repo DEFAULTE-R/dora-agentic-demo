@@ -1,24 +1,34 @@
 # 🤖 Agentic Dora Demo (GSoC 2026 Prototype)
 
-A modular, real-time robotics pipeline built using **Dora-RS**, demonstrating an **agentic architecture** with structured messaging, safety validation, and simulation.
+A modular, real-time robotics pipeline built using **Dora-RS**, demonstrating a **true agentic architecture** with LLM-driven reasoning, tool-based execution, safety validation, and simulation.
 
 ---
 
 ## 🚀 Overview
 
-This project implements a complete **agent-driven robotics control system** using Dora dataflows:
+This project implements a complete **agent-driven robotics control system**:
 
 ```
-Input Node → Agent Bridge → Safety Node → Simulation Node
+Input → LLM Agent → Tool Mapping → Safety → Simulation
 ```
 
-### Key Features
+Unlike traditional pipelines, the agent:
 
-* 🧠 Natural language → control signal conversion
-* 🛡️ Dedicated safety validation layer
-* 🔄 Structured message passing (JSON schema)
-* ⚡ Real-time execution with Dora runtime
-* 🎮 Live robot simulation using PyBullet
+* **understands natural language**
+* **decides actions (tools)**
+* **executes through structured control signals**
+
+---
+
+## 🔥 Key Highlights
+
+* 🧠 **LLM-powered agent (Ollama + Mistral, fully local)**
+* 🧰 **Tool-based architecture (action → execution mapping)**
+* 🛡️ **Dedicated safety node for validation and constraints**
+* 🔄 **Structured JSON messaging across nodes**
+* ⚡ **Real-time execution using Dora runtime**
+* 🎮 **Physics-based simulation with PyBullet**
+* 🔌 **Fully modular — components can be swapped independently**
 
 ---
 
@@ -26,158 +36,122 @@ Input Node → Agent Bridge → Safety Node → Simulation Node
 
 ### 🔹 Input Node
 
-* Streams commands (e.g., `"move forward"`, `"turn left"`)
-* Designed for **non-interactive Dora execution** (no `input()`)
+* Streams commands (`move forward`, `turn left`, etc.)
+* Designed for **non-blocking Dora execution**
 
 ---
 
-### 🔹 Agent Bridge
+### 🔹 LLM Agent Node
 
-* Converts natural language → structured control signals
-* Current implementation: rule-based agent
-* Output format:
+* Converts natural language → **tool/action**
+* Uses local LLM (**Mistral via Ollama**)
+* Example output:
 
 ```json
 {
-  "velocity": {
-    "linear": 0.5,
-    "angular": 0.0
-  },
-  "meta": {
-    "source": "agent",
-    "timestamp": 0,
-    "command_id": "move forward"
-  }
+  "action": "move_forward",
+  "params": {}
 }
 ```
 
 ---
 
+### 🔹 Tool Mapping Layer (inside agent)
+
+Maps agent decisions → executable control:
+
+| Action       | Output Velocity            |
+| ------------ | -------------------------- |
+| move_forward | linear: 0.5, angular: 0.0  |
+| turn_left    | linear: 0.0, angular: 1.0  |
+| turn_right   | linear: 0.0, angular: -1.0 |
+| stop         | linear: 0.0, angular: 0.0  |
+
+---
+
 ### 🔹 Safety Node
 
-* Independent validation layer (aligned with Dora philosophy)
-* Responsibilities:
-
-  * Clamp velocity values
-  * Detect unsafe commands
-  * Ensure safe execution before simulation
+* Validates and clamps control signals
+* Prevents unsafe execution
+* Decoupled from agent logic
 
 ---
 
 ### 🔹 Simulation Node
 
-* Built using **PyBullet**
-* Applies velocity in real time:
-
-```python
-p.resetBaseVelocity(
-    robot,
-    linearVelocity=[linear, 0, 0],
-    angularVelocity=[0, 0, angular]
-)
-```
+* Powered by **PyBullet**
+* Executes velocity commands in real time
 
 ---
 
 ## 🔁 Data Flow
 
 ```
-Input → Agent → Safety → Simulation
-         ↓
-   Structured JSON Messages
+Command
+   ↓
+LLM Agent (reasoning)
+   ↓
+Action (tool)
+   ↓
+Velocity Mapping
+   ↓
+Safety Layer
+   ↓
+Simulation
 ```
 
 ---
 
-## 🧩 Structured Messaging
+## 🧠 Why This Matters
 
-This project introduces a **schema-based communication system**:
+This project demonstrates a **core idea behind Agentic Dora**:
 
-### Python (runtime)
+> Replace static pipelines with intelligent, modular agents that reason and act.
 
-* JSON messages passed between nodes
+Key contributions:
 
-### Rust (future integration)
-
-* Typed schema defined in:
-
-```
-src/schemas/control.rs
-```
-
-Includes:
-
-* `VelocityCommand`
-* `CommandMeta`
-* `ControlMessage`
-
-👉 Enables:
-
-* Traceability (command_id)
-* Observability (source, timestamp)
-* Extensibility (future fields)
+* Shows **agent + tool execution pattern**
+* Demonstrates **separation of reasoning and execution**
+* Introduces **safety as an independent system component**
+* Enables **LLM integration without breaking pipeline structure**
 
 ---
 
 ## ⚙️ Setup
 
-### 1. Clone the repo
-
 ```bash
 git clone https://github.com/DEFAULTE-R/dora-agentic-demo.git
 cd dora-agentic-demo
-```
 
----
-
-### 2. Create virtual environment
-
-```bash
 python3 -m venv dora-env
 source dora-env/bin/activate
+
+pip install dora-rs pybullet requests
 ```
 
 ---
 
-### 3. Install dependencies
+## 🤖 Run the System
 
 ```bash
-pip install dora-rs pybullet smolagents
+dora run configs/dataflow.yml --uv
 ```
 
 ---
 
-## ▶️ Run the Pipeline
+## 🧠 LLM Setup (Local)
+
+Install Ollama and run:
 
 ```bash
-dora run configs/dataflow.yml
+ollama run mistral
 ```
 
----
-
-## ⚠️ Important Notes
-
-### ❌ No `input()` in Dora Nodes
-
-Dora nodes are non-interactive.
-Using `input()` will cause:
+The agent will automatically connect to:
 
 ```
-EOFError: EOF when reading a line
+http://localhost:11434
 ```
-
-✅ Use streaming or predefined inputs instead.
-
----
-
-### ⚠️ Simulation Exit Behavior
-
-Closing the PyBullet window will:
-
-* Terminate the simulation node
-* Cause "broken pipe" logs in other nodes
-
-This is expected in distributed systems.
 
 ---
 
@@ -186,54 +160,48 @@ This is expected in distributed systems.
 ### ✅ Completed
 
 * Modular Dora pipeline
-* Agent → Safety → Simulation flow
-* Structured JSON messaging
-* Real-time simulation control
-* Safety abstraction layer
+* LLM-based agent reasoning
+* Tool-based action abstraction
+* Action → execution mapping
+* Safety validation layer
+* Real-time simulation
 
-### 🚧 In Progress
+### 🚧 Next Steps
 
-* Metadata preservation across all nodes
-* LLM-based agent integration
-* Multi-step command execution
+* Multi-step planning (e.g., “move in a square”)
+* Structured tool schema (typed actions)
+* Observability & debugging tools
 * Fault tolerance & node recovery
+* Replace prompt logic with agent frameworks (e.g., smolagents)
 
 ---
 
-## 🎯 GSoC 2026 Direction
+## 🎯 GSoC 2026 Alignment
 
-This project is evolving toward:
+This prototype directly aligns with the **Agentic Dora** project:
 
-* 🤖 **Agentic robotics system**
-* 🧠 LLM-powered decision making
-* 🛡️ Robust safety guarantees
-* 📡 Typed, schema-driven communication
-* 🔁 Multi-node coordination
-
----
-
-## 🧠 Key Learnings
-
-* Dora requires **event-driven, non-blocking nodes**
-* Separation of concerns is critical (Agent vs Safety)
-* Structured messaging enables scalable systems
-* Real-time systems require fault awareness
+* ✔ Minimal working agent pipeline
+* ✔ Modular node composition
+* ✔ LLM integration pathway
+* ✔ Safety-aware execution
+* ✔ Extensible architecture for advanced agents
 
 ---
 
-## 📌 Repository
+## 🧠 Key Insight
 
-👉 https://github.com/DEFAULTE-R/dora-agentic-demo
+> This is not just a simulation pipeline —
+> it is a **foundation for agent-based robotic systems**.
 
 ---
 
 ## 🧑‍💻 Author
 
 **Hari L**
-GSoC 2026 Aspirant – Agentic Systems & Robotics
+GSoC 2026 Aspirant — Agentic Systems & Robotics
 
 ---
 
-## ⭐ If you find this useful
+## ⭐ Support
 
-Star the repo and follow the progress 🚀
+If this project helped or inspired you, consider starring ⭐ the repo!
