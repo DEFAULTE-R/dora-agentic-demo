@@ -1,26 +1,24 @@
 nodes:
   - id: input
-    path: ../input_node.py
+    path: ../nodes/input_node/main.py
     outputs:
-      - user_command
+      - command
 
-  - id: agent_bridge
-    path: ../agent_bridge/bridge.py
+  - id: agent
+    path: ../nodes/agent_node/main.py
     inputs:
-      command: input/user_command
+      command: input/command
     outputs:
-      - cmd_out
+      - velocity
 
   - id: safety
-    path: ../safety_node.py
+    path: ../nodes/safety_node/main.py
     inputs:
-      cmd_in: agent_bridge/cmd_out
+      velocity: agent/velocity
     outputs:
-      - cmd_vel
+      - safe_velocity
 
   - id: simulation
-    path: ../simulation/robot.py
+    path: ../nodes/simulation_node/simulation/robot.py
     inputs:
-      cmd_vel: safety/cmd_vel
-    outputs:
-      - robot_pose
+      safe_velocity: safety/safe_velocity

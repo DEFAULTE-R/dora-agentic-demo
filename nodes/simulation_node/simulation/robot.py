@@ -7,7 +7,7 @@ from dora import Node
 node = Node()
 
 # Connect to PyBullet in headless mode
-p.connect(p.GUI)
+p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.8)
 p.loadURDF("plane.urdf")

@@ -21,7 +21,7 @@ while True:
     print(f"[INPUT] Sending: {command}")
     
     output = pa.array([command], type=pa.string())
-    node.send_output("user_command", output)
+    node.send_output("command", output)
     
     i += 1
     time.sleep(2)
